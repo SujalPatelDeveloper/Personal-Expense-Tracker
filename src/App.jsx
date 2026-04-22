@@ -9,6 +9,7 @@ import Analytics from './components/Analytics';
 import AboutPage from './components/AboutPage';
 import ContactPage from './components/ContactPage';
 import LegalPage from './components/LegalPage';
+import ProfilePage from './components/ProfilePage';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -47,6 +48,7 @@ function AppContent() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<LegalPage type="privacy" />} />
           <Route path="/terms" element={<LegalPage type="terms" />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

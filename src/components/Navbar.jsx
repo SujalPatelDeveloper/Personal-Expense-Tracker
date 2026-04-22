@@ -1,37 +1,44 @@
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { Sun, Moon, Menu, X, Wallet, LogOut, LayoutDashboard, BarChart2, Trash2 } from 'lucide-react';
+import { Sun, Moon, Menu, X, Wallet, LayoutDashboard, BarChart2, Settings, LogOut, User, ChevronDown } from 'lucide-react';
 import './Navbar.css';
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, logout, deleteAccount } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
     navigate('/');
+    setShowUserMenu(false);
     setMobileMenuOpen(false);
-  };
-
-  const handleDeleteAccount = async () => {
-    if (window.confirm('WARNING: Are you sure you want to delete your account? All your transaction data and settings will be permanently removed. This cannot be undone.')) {
-      await deleteAccount();
-      navigate('/');
-      setMobileMenuOpen(false);
-    }
   };
 
   const handleNavigate = (path) => {
     navigate(path);
     setMobileMenuOpen(false);
+    setShowUserMenu(false);
   };
 
   const isActive = (path) => location.pathname === path;
+  const isAppSection = location.pathname === '/dashboard' || location.pathname === '/analytics';
 
   return (
     <nav className="navbar" id="main-navbar">
@@ -44,29 +51,33 @@ export default function Navbar() {
         </button>
 
         <div className={`navbar-links ${mobileMenuOpen ? 'open' : ''}`}>
-          <button
-            className={`nav-link ${isActive('/') ? 'active' : ''}`}
-            onClick={() => handleNavigate('/')}
-            id="nav-home"
-          >
-            Home
-          </button>
-          <button
-            className={`nav-link ${isActive('/about') ? 'active' : ''}`}
-            onClick={() => handleNavigate('/about')}
-            id="nav-about"
-          >
-            About
-          </button>
-          <button
-            className={`nav-link ${isActive('/contact') ? 'active' : ''}`}
-            onClick={() => handleNavigate('/contact')}
-            id="nav-contact"
-          >
-            Contact
-          </button>
+          {(!isAppSection || isAuthenticated) && (
+            <>
+              <button
+                className={`nav-link ${isActive('/') ? 'active' : ''}`}
+                onClick={() => handleNavigate('/')}
+                id="nav-home"
+              >
+                Home
+              </button>
+              <button
+                className={`nav-link ${isActive('/about') ? 'active' : ''}`}
+                onClick={() => handleNavigate('/about')}
+                id="nav-about"
+              >
+                About
+              </button>
+              <button
+                className={`nav-link ${isActive('/contact') ? 'active' : ''}`}
+                onClick={() => handleNavigate('/contact')}
+                id="nav-contact"
+              >
+                Contact
+              </button>
+            </>
+          )}
 
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <>
               <button
                 className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
@@ -84,21 +95,8 @@ export default function Navbar() {
                 <BarChart2 size={16} />
                 Analytics
               </button>
-              <div className="nav-user-section">
-                <div className="nav-user-avatar">
-                  {user?.name?.charAt(0)?.toUpperCase()}
-                </div>
-                <span className="nav-user-name">{user?.name}</span>
-                <button className="btn btn-sm btn-secondary nav-logout" onClick={handleLogout} id="nav-logout">
-                  <LogOut size={14} />
-                  Logout
-                </button>
-                <button className="btn btn-sm btn-danger-soft nav-delete-account" onClick={handleDeleteAccount} id="nav-delete-account" title="Delete Account">
-                  <Trash2 size={14} />
-                </button>
-              </div>
             </>
-          ) : null}
+          )}
         </div>
 
         <div className="navbar-actions">
@@ -124,7 +122,7 @@ export default function Navbar() {
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
           
-          {!isAuthenticated && (
+          {!isAuthenticated ? (
             <button
               className={`btn-signin-nav ${isActive('/auth') ? 'active' : ''}`}
               onClick={() => handleNavigate('/auth')}
@@ -132,6 +130,43 @@ export default function Navbar() {
             >
               Sign In
             </button>
+          ) : (
+            <div className="nav-user-section" ref={userMenuRef}>
+              <button 
+                className={`nav-profile-toggle ${showUserMenu ? 'active' : ''}`}
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                title="User Menu"
+              >
+                <div className="nav-user-avatar">
+                  {user?.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <span className="nav-user-name">{user?.name}</span>
+                <ChevronDown size={14} className={`menu-chevron ${showUserMenu ? 'rotate' : ''}`} />
+              </button>
+
+              {showUserMenu && (
+                <div className="user-dropdown-menu glass-card animate-fadeInScale">
+                  <div className="dropdown-header">
+                    <p className="dropdown-user-name">{user?.name}</p>
+                    <p className="dropdown-user-email">{user?.email}</p>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item" onClick={() => handleNavigate('/profile')}>
+                    <Settings size={16} />
+                    <span>Settings</span>
+                  </button>
+                  <button className="dropdown-item" onClick={() => handleNavigate('/dashboard')}>
+                    <LayoutDashboard size={16} />
+                    <span>Dashboard</span>
+                  </button>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item logout-item" onClick={handleLogout}>
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
