@@ -1,69 +1,147 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  auth, 
+  googleProvider, 
+  microsoftProvider,
+  appleProvider,
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword 
+} from '../firebase';
+import { updateProfile } from 'firebase/auth';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('trackit-user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('trackit-user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('trackit-user');
-    }
-  }, [user]);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser({
+          id: currentUser.uid,
+          name: currentUser.displayName,
+          email: currentUser.email,
+          photo: currentUser.photoURL
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
 
-  const signup = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('trackit-users') || '[]');
-    const exists = users.find(u => u.email === email);
-    if (exists) {
-      return { success: false, message: 'An account with this email already exists.' };
+    return () => unsubscribe();
+  }, []);
+
+  const signup = async (name, email, password) => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(result.user, { displayName: name });
+      setUser({
+        id: result.user.uid,
+        name: name,
+        email: result.user.email
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-    const newUser = { id: Date.now().toString(), name, email, password, createdAt: new Date().toISOString() };
-    users.push(newUser);
-    localStorage.setItem('trackit-users', JSON.stringify(users));
-    const { password: _, ...safeUser } = newUser;
-    setUser(safeUser);
-    return { success: true };
   };
 
-  const signin = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('trackit-users') || '[]');
-    const found = users.find(u => u.email === email && u.password === password);
-    if (!found) {
-      return { success: false, message: 'Invalid email or password.' };
+  const signin = async (email, password) => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      setUser({
+        id: result.user.uid,
+        name: result.user.displayName,
+        email: result.user.email
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-    const { password: _, ...safeUser } = found;
-    setUser(safeUser);
-    return { success: true };
   };
 
-  const logout = () => {
-    setUser(null);
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      setUser({
+        id: result.user.uid,
+        name: result.user.displayName,
+        email: result.user.email,
+        photo: result.user.photoURL
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   };
 
-  const deleteAccount = () => {
-    if (!user) return { success: false, message: 'No user is logged in.' };
+  const signInWithMicrosoft = async () => {
+    try {
+      const result = await signInWithPopup(auth, microsoftProvider);
+      setUser({
+        id: result.user.uid,
+        name: result.user.displayName,
+        email: result.user.email,
+        photo: result.user.photoURL
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  const signInWithApple = async () => {
+    try {
+      const result = await signInWithPopup(auth, appleProvider);
+      setUser({
+        id: result.user.uid,
+        name: result.user.displayName,
+        email: result.user.email,
+        photo: result.user.photoURL
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error", error);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!auth.currentUser) return { success: false, message: 'No user is logged in.' };
     
-    const userId = user.id;
-    const users = JSON.parse(localStorage.getItem('trackit-users') || '[]');
-    const filteredUsers = users.filter(u => u.id !== userId);
-    localStorage.setItem('trackit-users', JSON.stringify(filteredUsers));
-    
-    // Clear user-specific data
-    localStorage.removeItem(`trackit-expenses-${userId}`);
-    localStorage.removeItem(`trackit-recurring-${userId}`);
-    
-    setUser(null);
-    return { success: true };
+    try {
+      const userId = auth.currentUser.uid;
+      // Note: In a real app, you'd call a Cloud Function to delete user data from Firestore/Database
+      // Here we still clear local data for consistency with previous logic
+      localStorage.removeItem(`trackit-expenses-${userId}`);
+      localStorage.removeItem(`trackit-recurring-${userId}`);
+      
+      await auth.currentUser.delete();
+      setUser(null);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, signup, signin, logout, deleteAccount, isAuthenticated: !!user }}>
-      {children}
+    <AuthContext.Provider value={{ 
+      user, signup, signin, signInWithGoogle, signInWithMicrosoft, signInWithApple, logout, deleteAccount, isAuthenticated: !!user, loading 
+    }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 }

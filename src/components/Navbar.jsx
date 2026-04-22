@@ -1,37 +1,42 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { Sun, Moon, Menu, X, Wallet, LogOut, LayoutDashboard, BarChart2, Repeat, Trash2 } from 'lucide-react';
+import { Sun, Moon, Menu, X, Wallet, LogOut, LayoutDashboard, BarChart2, Trash2 } from 'lucide-react';
 import './Navbar.css';
 
-export default function Navbar({ currentPage, setCurrentPage }) {
-   const { theme, toggleTheme } = useTheme();
+export default function Navbar() {
+  const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout, deleteAccount } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
-    setCurrentPage('home');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
     setMobileMenuOpen(false);
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (window.confirm('WARNING: Are you sure you want to delete your account? All your transaction data and settings will be permanently removed. This cannot be undone.')) {
-      deleteAccount();
-      setCurrentPage('home');
+      await deleteAccount();
+      navigate('/');
       setMobileMenuOpen(false);
     }
   };
 
-  const navigate = (page) => {
-    setCurrentPage(page);
+  const handleNavigate = (path) => {
+    navigate(path);
     setMobileMenuOpen(false);
   };
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <nav className="navbar" id="main-navbar">
       <div className="container navbar-inner">
-        <button className="navbar-brand" onClick={() => navigate('home')} id="nav-brand">
+        <button className="navbar-brand" onClick={() => handleNavigate('/')} id="nav-brand">
           <div className="brand-icon">
             <Wallet size={22} />
           </div>
@@ -40,26 +45,40 @@ export default function Navbar({ currentPage, setCurrentPage }) {
 
         <div className={`navbar-links ${mobileMenuOpen ? 'open' : ''}`}>
           <button
-            className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
-            onClick={() => navigate('home')}
+            className={`nav-link ${isActive('/') ? 'active' : ''}`}
+            onClick={() => handleNavigate('/')}
             id="nav-home"
           >
             Home
+          </button>
+          <button
+            className={`nav-link ${isActive('/about') ? 'active' : ''}`}
+            onClick={() => handleNavigate('/about')}
+            id="nav-about"
+          >
+            About
+          </button>
+          <button
+            className={`nav-link ${isActive('/contact') ? 'active' : ''}`}
+            onClick={() => handleNavigate('/contact')}
+            id="nav-contact"
+          >
+            Contact
           </button>
 
           {isAuthenticated ? (
             <>
               <button
-                className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`}
-                onClick={() => navigate('dashboard')}
+                className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+                onClick={() => handleNavigate('/dashboard')}
                 id="nav-dashboard"
               >
                 <LayoutDashboard size={16} />
                 Dashboard
               </button>
               <button
-                className={`nav-link ${currentPage === 'analytics' ? 'active' : ''}`}
-                onClick={() => navigate('analytics')}
+                className={`nav-link ${isActive('/analytics') ? 'active' : ''}`}
+                onClick={() => handleNavigate('/analytics')}
                 id="nav-analytics"
               >
                 <BarChart2 size={16} />
@@ -107,8 +126,8 @@ export default function Navbar({ currentPage, setCurrentPage }) {
           
           {!isAuthenticated && (
             <button
-              className={`btn-signin-nav ${currentPage === 'auth' ? 'active' : ''}`}
-              onClick={() => navigate('auth')}
+              className={`btn-signin-nav ${isActive('/auth') ? 'active' : ''}`}
+              onClick={() => handleNavigate('/auth')}
               id="nav-auth-premium"
             >
               Sign In

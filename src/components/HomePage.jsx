@@ -1,8 +1,10 @@
 import { TrendingUp, Shield, PieChart, ArrowRight, Wallet, Sparkles, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './HomePage.css';
 
-export default function HomePage({ setCurrentPage }) {
+export default function HomePage() {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   const features = [
@@ -58,7 +60,7 @@ export default function HomePage({ setCurrentPage }) {
             {isAuthenticated ? (
               <button
                 className="btn btn-primary btn-lg"
-                onClick={() => setCurrentPage('dashboard')}
+                onClick={() => navigate('/dashboard')}
                 id="hero-dashboard-btn"
               >
                 Go to Dashboard
@@ -68,7 +70,7 @@ export default function HomePage({ setCurrentPage }) {
               <>
                 <button
                   className="btn btn-primary btn-lg"
-                  onClick={() => setCurrentPage('auth')}
+                  onClick={() => navigate('/auth')}
                   id="hero-get-started-btn"
                 >
                   Get Started Free
@@ -76,7 +78,7 @@ export default function HomePage({ setCurrentPage }) {
                 </button>
                 <button
                   className="btn btn-secondary btn-lg"
-                  onClick={() => setCurrentPage('auth')}
+                  onClick={() => navigate('/auth')}
                   id="hero-signin-btn"
                 >
                   Sign In
@@ -146,7 +148,7 @@ export default function HomePage({ setCurrentPage }) {
               </p>
               <button
                 className="btn btn-primary btn-lg"
-                onClick={() => setCurrentPage(isAuthenticated ? 'dashboard' : 'auth')}
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
                 id="cta-action-btn"
               >
                 {isAuthenticated ? 'Open Dashboard' : 'Create Free Account'}
@@ -157,16 +159,6 @@ export default function HomePage({ setCurrentPage }) {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="footer" id="footer">
-        <div className="container footer-inner">
-          <div className="footer-brand">
-            <Wallet size={20} />
-            <span>TrackIt</span>
-          </div>
-          <p className="footer-text">© 2026 TrackIt. Made with ❤️ for your finances.</p>
-        </div>
-      </footer>
     </div>
   );
 }

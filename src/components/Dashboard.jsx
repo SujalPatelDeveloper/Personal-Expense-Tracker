@@ -61,6 +61,19 @@ export default function Dashboard() {
     localStorage.setItem(recurringStorageKey, JSON.stringify(subscriptions));
   }, [subscriptions, recurringStorageKey]);
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (showForm || showRecurringForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showForm, showRecurringForm]);
+
   const resetForm = () => {
     setForm({
       title: '',
