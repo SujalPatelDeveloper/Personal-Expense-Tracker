@@ -6,8 +6,10 @@ import {
   Wallet, Calendar, Filter, Search, ArrowUpRight, ArrowDownRight,
   ShoppingCart, Coffee, Car, Home, Zap, Heart, GraduationCap,
   Gamepad2, MoreHorizontal, ChevronDown, IndianRupee, PieChart,
-  Repeat, Bell, CreditCard, Clock, History, Download
+  Repeat, Bell, CreditCard, Clock, History, Download, FileText
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './Dashboard.css';
 
 const CATEGORIES = [
@@ -99,7 +101,7 @@ export default function Dashboard() {
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -107,10 +109,10 @@ export default function Dashboard() {
 
   const resetRecurringForm = () => {
     setEditingRecurringId(null);
-    if(document.getElementById('new-sub-name')) document.getElementById('new-sub-name').value = '';
-    if(document.getElementById('new-sub-amount')) document.getElementById('new-sub-amount').value = '';
-    if(document.getElementById('new-sub-freq')) document.getElementById('new-sub-freq').value = 'monthly';
-    if(document.getElementById('new-sub-date')) document.getElementById('new-sub-date').value = new Date().toISOString().split('T')[0];
+    if (document.getElementById('new-sub-name')) document.getElementById('new-sub-name').value = '';
+    if (document.getElementById('new-sub-amount')) document.getElementById('new-sub-amount').value = '';
+    if (document.getElementById('new-sub-freq')) document.getElementById('new-sub-freq').value = 'monthly';
+    if (document.getElementById('new-sub-date')) document.getElementById('new-sub-date').value = new Date().toISOString().split('T')[0];
   };
 
   const resetForm = () => {
@@ -211,7 +213,7 @@ export default function Dashboard() {
 
   const exportToExcel = () => {
     if (fullHistory.length === 0) return;
-    
+
     // Create HTML table structure that Excel understands
     let html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -247,14 +249,14 @@ export default function Dashboard() {
           </thead>
           <tbody>
     `;
-    
+
     fullHistory.forEach(item => {
       const type = item.type === 'expense' ? 'Expense' : 'Recurring';
       const title = item.title || item.name;
       const category = item.category || item.frequency;
       const amount = item.amount;
       const date = new Date(item.timestamp).toLocaleDateString('en-IN');
-      
+
       html += `
         <tr>
           <td>${type}</td>
@@ -265,14 +267,14 @@ export default function Dashboard() {
         </tr>
       `;
     });
-    
+
     html += `
           </tbody>
         </table>
       </body>
       </html>
     `;
-    
+
     const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -281,6 +283,91 @@ export default function Dashboard() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const exportToPDF = async () => {
+    if (fullHistory.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+
+      // Add a font that supports Unicode (Roboto)
+      // This helps render the ₹ symbol correctly without spacing issues
+      try {
+        const fontUrl = 'https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf';
+        const fontResponse = await fetch(fontUrl);
+        const fontBuffer = await fontResponse.arrayBuffer();
+        const fontBase64 = btoa(new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+        doc.addFileToVFS('Roboto.ttf', fontBase64);
+        doc.addFont('Roboto.ttf', 'Roboto', 'normal');
+        doc.setFont('Roboto');
+      } catch (e) {
+        console.warn("Could not load custom font, falling back to helvetica", e);
+      }
+
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(33, 33, 33);
+      doc.text('Financial Report', 14, 22);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`User: ${user?.name || 'User'}`, 14, 30);
+      doc.text(`Email: ${user?.email || ''}`, 14, 35);
+      doc.text(`Date Generated: ${new Date().toLocaleDateString('en-IN')}`, pageWidth - 14, 30, { align: 'right' });
+
+      // Table Data
+      const tableColumn = ["Date", "Type", "Title/Name", "Category/Freq", "Amount"];
+      const tableRows = [];
+      let totalAmount = 0;
+
+      fullHistory.forEach(item => {
+        const type = item.type === 'expense' ? 'Expense' : 'Recurring';
+        const title = item.title || item.name;
+        const category = item.category || item.frequency;
+        const amount = item.amount;
+        const date = new Date(item.timestamp).toLocaleDateString('en-IN');
+
+        tableRows.push([
+          date,
+          type,
+          title,
+          category,
+          `₹ ${amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+        ]);
+        totalAmount += amount;
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 45,
+        theme: 'striped',
+        styles: { font: doc.getFontList().Roboto ? 'Roboto' : 'helvetica', fontSize: 10 },
+        headStyles: { fillColor: [16, 185, 129], textColor: 255 },
+        foot: [["", "", "", "TOTAL SPENT", `₹ ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`]],
+        footStyles: {
+          fillColor: [243, 244, 246],
+          textColor: 33,
+          font: doc.getFontList().Roboto ? 'Roboto' : 'helvetica',
+          fontStyle: 'normal',
+          fontSize: 12
+        },
+        columnStyles: {
+          3: { halign: 'left' }, // Align 'TOTAL SPENT' with Category
+          4: { halign: 'left', cellWidth: 'auto' } // Force right alignment for the whole column
+        }
+      });
+
+      doc.save(`Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error("PDF Export Error:", error);
+      alert("Failed to generate PDF. Please check the console for details.");
+    }
   };
 
   // Filtered expenses
@@ -413,19 +500,21 @@ export default function Dashboard() {
           </div>
           <div className="dash-actions-group">
             <div className="select-wrapper no-icon" style={{ minWidth: '160px' }}>
-              <select 
-                className="input-field filter-select" 
+              <select
+                className="input-field filter-select"
                 style={{ paddingRight: '36px', height: '100%' }}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === 'csv') exportToCSV();
                   if (val === 'excel') exportToExcel();
+                  if (val === 'pdf') exportToPDF();
                   e.target.value = ''; // Reset
                 }}
               >
                 <option value="">Export Data...</option>
                 <option value="csv">CSV File</option>
                 <option value="excel">Excel Sheet</option>
+                <option value="pdf">PDF Report</option>
               </select>
               <Download size={16} className="select-chevron" style={{ right: '12px', pointerEvents: 'none' }} />
             </div>
@@ -549,20 +638,20 @@ export default function Dashboard() {
                 </div>
                 {filterPeriod === 'custom' && (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input 
-                      type="date" 
-                      className="input-field" 
-                      style={{ padding: '8px 12px', fontSize: '0.85rem', width: 'auto' }} 
-                      value={customStartDate} 
-                      onChange={e => setCustomStartDate(e.target.value)} 
+                    <input
+                      type="date"
+                      className="input-field"
+                      style={{ padding: '8px 12px', fontSize: '0.85rem', width: 'auto' }}
+                      value={customStartDate}
+                      onChange={e => setCustomStartDate(e.target.value)}
                     />
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>to</span>
-                    <input 
-                      type="date" 
-                      className="input-field" 
-                      style={{ padding: '8px 12px', fontSize: '0.85rem', width: 'auto' }} 
-                      value={customEndDate} 
-                      onChange={e => setCustomEndDate(e.target.value)} 
+                    <input
+                      type="date"
+                      className="input-field"
+                      style={{ padding: '8px 12px', fontSize: '0.85rem', width: 'auto' }}
+                      value={customEndDate}
+                      onChange={e => setCustomEndDate(e.target.value)}
                     />
                   </div>
                 )}
@@ -679,8 +768,9 @@ export default function Dashboard() {
             <div className="recurring-card glass-card">
               <div className="sidebar-header-row">
                 <h3 className="sidebar-title">Recurring</h3>
-                <button className="btn-icon-sm" onClick={() => setShowRecurringForm(true)} title="Manage Recurring">
-                  <Repeat size={14} />
+                <button className="btn btn-primary btn-sm" onClick={() => setShowRecurringForm(true)} style={{ padding: '6px 12px', fontSize: '0.75rem' }}>
+                  <Plus size={14} />
+                  Add Expense
                 </button>
               </div>
 
@@ -834,7 +924,6 @@ export default function Dashboard() {
           <div className="modal glass-card animate-fadeInUp" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <div className="modal-header-with-icon">
-                <Repeat size={20} className="accent-text" />
                 <h2>Manage Recurring Payments</h2>
               </div>
               <button className="btn-icon" onClick={() => { setShowRecurringForm(false); resetRecurringForm(); }}><X size={20} /></button>
@@ -857,7 +946,7 @@ export default function Dashboard() {
                       else next.setMonth(next.getMonth() + 1);
                     }
                     const formattedNextDate = next.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-                    
+
                     return (
                       <div key={sub.id} className="sub-manager-item">
                         <div className="sub-manager-info">
@@ -935,7 +1024,7 @@ export default function Dashboard() {
                         if (!name || !amount) return;
 
                         const nextDate = customDate || new Date().toISOString().split('T')[0];
-                        
+
                         if (editingRecurringId) {
                           const { data, error } = await supabase
                             .from('recurring')
@@ -1006,8 +1095,8 @@ export default function Dashboard() {
             <div className="history-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)', gap: '12px', flexWrap: 'wrap' }}>
               <div className="select-wrapper">
                 <Calendar size={14} className="select-icon" />
-                <select 
-                  className="input-field filter-select" 
+                <select
+                  className="input-field filter-select"
                   value={historyMonth}
                   onChange={(e) => setHistoryMonth(e.target.value)}
                   style={{ minWidth: '160px' }}
@@ -1085,8 +1174,8 @@ export default function Dashboard() {
               <button className="btn btn-secondary" onClick={() => setConfirmDelete({ show: false, id: null, type: null, title: '' })} style={{ flex: 1 }}>
                 Cancel
               </button>
-              <button 
-                className="btn btn-danger" 
+              <button
+                className="btn btn-danger"
                 style={{ flex: 1 }}
                 onClick={async () => {
                   if (confirmDelete.type === 'expense') {

@@ -4,8 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { 
   User, Mail, Shield, CheckCircle, Plus, 
   Smartphone, Globe, Lock, AlertCircle, 
-  Edit3, Camera, Moon, Sun, Trash2, Key, LogOut
+  Edit3, Camera, Moon, Sun, Trash2, Key, LogOut,
+  Download, FileText
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { supabase } from '../supabase';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
@@ -61,6 +65,92 @@ export default function ProfilePage() {
       setNewPassword('');
     } else {
       setMessage({ type: 'error', text: result.message });
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data: expenses, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+
+      // Add a font that supports Unicode (Roboto)
+      try {
+        const fontUrl = 'https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf';
+        const fontResponse = await fetch(fontUrl);
+        const fontBuffer = await fontResponse.arrayBuffer();
+        const fontBase64 = btoa(new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+        doc.addFileToVFS('Roboto.ttf', fontBase64);
+        doc.addFont('Roboto.ttf', 'Roboto', 'normal');
+        doc.setFont('Roboto');
+      } catch (e) {
+        console.warn("Could not load custom font, falling back to helvetica", e);
+      }
+      
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(33, 33, 33);
+      doc.text('Expense Report', 14, 22);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`User: ${user.name}`, 14, 30);
+      doc.text(`Email: ${user.email}`, 14, 35);
+      doc.text(`Date Generated: ${new Date().toLocaleDateString()}`, pageWidth - 14, 30, { align: 'right' });
+      
+      // Table
+      const tableColumn = ["Date", "Category", "Description", "Amount"];
+      const tableRows = [];
+      let totalAmount = 0;
+
+      expenses.forEach(expense => {
+        const expenseData = [
+          new Date(expense.date).toLocaleDateString(),
+          expense.category,
+          expense.name || '-',
+          `₹ ${expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+        ];
+        tableRows.push(expenseData);
+        totalAmount += expense.amount;
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 45,
+        theme: 'striped',
+        styles: { font: doc.getFontList().Roboto ? 'Roboto' : 'helvetica', fontSize: 10 },
+        headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+        foot: [["", "", "TOTAL SPENT", `₹ ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` ]],
+        footStyles: { 
+          fillColor: [243, 244, 246], 
+          textColor: 33, 
+          font: doc.getFontList().Roboto ? 'Roboto' : 'helvetica',
+          fontStyle: 'normal',
+          fontSize: 12
+        },
+        columnStyles: {
+          2: { halign: 'left' }, // TOTAL SPENT aligned with Description
+          3: { halign: 'right', cellWidth: 'auto' } // Amount aligned with Amount
+        }
+      });
+
+      doc.save(`TrackIt_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      setMessage({ type: 'success', text: 'Report downloaded successfully!' });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Failed to generate report.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -222,6 +312,27 @@ export default function ProfilePage() {
                   <button className="btn btn-secondary-outline btn-xs" onClick={() => handleLink('apple.com')} disabled={loading}>Connect</button>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Export & Data */}
+          <div className="profile-card glass-card">
+            <div className="card-header-simple">
+              <Download size={20} className="accent-text" />
+              <h3>Data & Reports</h3>
+            </div>
+            <p className="card-desc">Download your transaction history in professional formats</p>
+            
+            <div className="export-options">
+              <button 
+                className="btn btn-primary-soft btn-full export-btn" 
+                onClick={handleDownloadPDF}
+                disabled={loading}
+              >
+                <FileText size={18} />
+                {loading ? 'Generating...' : 'Download PDF Report'}
+              </button>
+              <p className="export-hint">Includes all transaction details with calculated totals.</p>
             </div>
           </div>
 
