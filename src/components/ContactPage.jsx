@@ -84,7 +84,11 @@ export default function ContactPage() {
 
           {/* Contact Form */}
           <div className="contact-form-section animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
-            <div className="contact-form-card glass-card">
+          <div className="contact-form-card glass-card">
+              <div className="form-card-header">
+                <h2>Send a Message</h2>
+                <p>We'll get back to you within 24 hours.</p>
+              </div>
               {submitted ? (
                 <div className="form-success">
                   <div className="success-icon">

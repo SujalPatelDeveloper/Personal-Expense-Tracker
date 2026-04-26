@@ -1,7 +1,9 @@
 .analytics-page {
-  padding: 40px 0;
-  min-height: calc(100vh - 68px);
-  background: var(--bg-primary);
+  padding: 28px 0 100px;
+  min-height: 100vh;
+  background-image: 
+    radial-gradient(var(--border-color) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .analytics-header {
@@ -15,12 +17,6 @@
   letter-spacing: -0.02em;
 }
 
-.accent-text {
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
 
 .analytics-subtitle {
   color: var(--text-secondary);
@@ -44,7 +40,14 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 24px;
+  padding: 28px;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-glass);
+}
+.ana-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-xl);
 }
 
 .ana-card-icon {
@@ -78,11 +81,17 @@
 }
 
 .chart-card {
-  padding: 24px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Prevent child overflow from expanding the card */
+  overflow: hidden;
   width: 100%;
+  border: 1px solid var(--border-glass);
+  transition: all var(--transition-normal);
+}
+.chart-card:hover {
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-lg);
 }
 
 .chart-header {

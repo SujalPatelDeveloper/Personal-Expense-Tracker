@@ -2,7 +2,19 @@
   background: var(--bg-primary);
   border-top: 1px solid var(--border-color);
   padding: 80px 0 40px;
-  margin-top: 80px;
+  margin-top: 100px;
+  position: relative;
+}
+
+.footer::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--accent-gradient);
+  opacity: 0.3;
 }
 
 .footer-grid {

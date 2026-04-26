@@ -13,6 +13,15 @@ export default function Navbar() {
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -41,7 +50,7 @@ export default function Navbar() {
   const isAppSection = location.pathname === '/dashboard' || location.pathname === '/analytics';
 
   return (
-    <nav className="navbar" id="main-navbar">
+    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} id="main-navbar">
       <div className="container navbar-inner">
         <button className="navbar-brand" onClick={() => handleNavigate('/')} id="nav-brand">
           <div className="brand-icon">

@@ -50,7 +50,7 @@ export default function HomePage() {
           </div>
           <h1 className="hero-title animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
             Take Control of Your
-            <span className="hero-title-accent"> Finances</span>
+            <span className="accent-text"> Finances</span>
           </h1>
           <p className="hero-subtitle animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
             Track, analyze, and optimize your spending with a beautiful, 

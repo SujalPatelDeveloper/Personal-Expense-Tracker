@@ -6,7 +6,7 @@
   padding: 40px 20px;
   position: relative;
   overflow: hidden;
-  background: var(--hero-gradient);
+  background: var(--bg-primary);
 }
 
 .auth-bg-effects {
@@ -45,8 +45,10 @@
 }
 
 .auth-card {
-  padding: 40px 36px;
+  padding: 48px 40px;
   border-radius: var(--radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-glass);
 }
 
 /* Toggle Switch */
