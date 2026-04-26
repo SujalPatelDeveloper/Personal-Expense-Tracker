@@ -22,8 +22,12 @@ TrackIt is a premium, high-performance financial management application designed
 
 ### 📱 Premium UX/UI
 - **Glassmorphic Design**: A state-of-the-art interface featuring backdrop blurs, soft gradients, and fluid micro-animations.
-- **Fully Responsive**: Optimized for Mobile, Tablet, and Desktop with specific touch-friendly controls.
-- **Export Power**: One-click professional PDF report generation, CSV data export, and Excel integration.
+- **Legal Modals**: Seamless in-app access to Terms of Service and Privacy Policy via premium popup modals.
+- **Dynamic Profile**: Reorganized account management with instant name synchronization.
+
+### 📧 Integrated Communication
+- **Real-time Contact Form**: Powered by EmailJS, allowing users to send messages directly to your inbox without a backend server.
+- **Automated Validation**: Built-in error handling and submission feedback with loading states.
 
 ## 🚀 Tech Stack
 
@@ -33,7 +37,7 @@ TrackIt is a premium, high-performance financial management application designed
 - **Visualizations**: Recharts
 - **Animation**: Framer Motion
 - **Icons**: Lucide React
-- **Reporting**: jsPDF + AutoTable
+- **Email Service**: EmailJS
 
 ## 🛠️ Installation
 

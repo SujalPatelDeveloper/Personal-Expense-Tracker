@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock, Globe } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, Clock, Globe, Loader2 } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 import './ContactPage.css';
 
 export default function ContactPage() {
@@ -10,14 +11,42 @@ export default function ContactPage() {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate API call
-    setTimeout(() => {
+    setIsSending(true);
+    setError('');
+
+    try {
+      // NOTE: Replace these strings with your actual EmailJS credentials
+      // You can get them from https://dashboard.emailjs.com/
+      const SERVICE_ID = 'service_mailto_sujal';
+      const TEMPLATE_ID = 'template_am5r0jx'; // Find this in "Email Templates"
+      const PUBLIC_KEY = 'LgVutxYPfspSpeY7_';  // Find this in "Account" -> "API Keys"
+
+      await emailjs.send(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        {
+          name: formData.name,       // Matches {{name}}
+          from_name: formData.name,  // Matches {{from_name}}
+          from_email: formData.email, // Matches {{from_email}}
+          subject: formData.subject,  // Matches {{subject}}
+          message: formData.message,  // Matches {{message}}
+        },
+        PUBLIC_KEY
+      );
+
       setSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 1000);
+    } catch (err) {
+      console.error('EmailJS Error:', err);
+      setError('Failed to send message. Please try again later.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -84,7 +113,7 @@ export default function ContactPage() {
 
           {/* Contact Form */}
           <div className="contact-form-section animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
-          <div className="contact-form-card glass-card">
+            <div className="contact-form-card glass-card">
               <div className="form-card-header">
                 <h2>Send a Message</h2>
                 <p>We'll get back to you within 24 hours.</p>
@@ -112,7 +141,7 @@ export default function ContactPage() {
                         placeholder="John Doe"
                         required
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
                     </div>
                     <div className="input-group">
@@ -124,7 +153,7 @@ export default function ContactPage() {
                         placeholder="john@example.com"
                         required
                         value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       />
                     </div>
                   </div>
@@ -137,7 +166,7 @@ export default function ContactPage() {
                       placeholder="How can we help?"
                       required
                       value={formData.subject}
-                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     />
                   </div>
                   <div className="input-group">
@@ -149,11 +178,24 @@ export default function ContactPage() {
                       placeholder="Your message here..."
                       required
                       value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     ></textarea>
                   </div>
-                  <button type="submit" className="btn btn-primary btn-lg btn-full">
-                    Send Message <Send size={18} />
+                  {error && (
+                    <div className="error-message animate-fadeInUp">
+                      {error}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg btn-full"
+                    disabled={isSending}
+                  >
+                    {isSending ? (
+                      <>Sending... <Loader2 size={18} className="animate-spin" /></>
+                    ) : (
+                      <>Send Message <Send size={18} /></>
+                    )}
                   </button>
                 </form>
               )}

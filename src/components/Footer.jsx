@@ -1,9 +1,16 @@
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Twitter, Linkedin, Instagram, Github, ArrowUpRight } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowUpRight } from 'lucide-react';
+import LegalModal from './LegalModal';
 import './Footer.css';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [legalModal, setLegalModal] = useState({ isOpen: false, type: 'privacy' });
+
+  const openLegal = (type) => {
+    setLegalModal({ isOpen: true, type });
+  };
 
   return (
     <footer className="footer" id="main-footer">
@@ -16,12 +23,6 @@ export default function Footer() {
             <p className="footer-tagline">
               Your personal financial companion for tracking expenses and building lasting wealth.
             </p>
-            <div className="footer-socials">
-              <a href="#" className="footer-social-link" aria-label="Twitter"><Twitter size={18} /></a>
-              <a href="#" className="footer-social-link" aria-label="LinkedIn"><Linkedin size={18} /></a>
-              <a href="#" className="footer-social-link" aria-label="Instagram"><Instagram size={18} /></a>
-              <a href="#" className="footer-social-link" aria-label="GitHub"><Github size={18} /></a>
-            </div>
           </div>
 
           <div className="footer-links-group">
@@ -38,8 +39,8 @@ export default function Footer() {
             <ul>
               <li><Link to="/about">About Us</Link></li>
               <li><Link to="/contact">Contact</Link></li>
-              <li><Link to="/terms">Terms of Service</Link></li>
-              <li><Link to="/privacy">Privacy Policy</Link></li>
+              <li><button onClick={() => openLegal('terms')}>Terms of Service</button></li>
+              <li><button onClick={() => openLegal('privacy')}>Privacy Policy</button></li>
             </ul>
           </div>
 
@@ -60,12 +61,18 @@ export default function Footer() {
             © {currentYear} TrackIt Inc. All rights reserved. Made with ❤️ for your finances.
           </div>
           <div className="footer-legal-links">
-            <Link to="/privacy">Privacy</Link>
-            <Link to="/terms">Terms</Link>
+            <button onClick={() => openLegal('privacy')}>Privacy</button>
+            <button onClick={() => openLegal('terms')}>Terms</button>
             <Link to="/contact">Support</Link>
           </div>
         </div>
       </div>
+
+      <LegalModal 
+        type={legalModal.type} 
+        isOpen={legalModal.isOpen} 
+        onClose={() => setLegalModal({ ...legalModal, isOpen: false })} 
+      />
     </footer>
   );
 }

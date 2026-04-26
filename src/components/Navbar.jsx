@@ -145,7 +145,7 @@ export default function Navbar() {
                 <div className="nav-user-avatar">
                   {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
-                <span className="nav-user-name">{user?.name?.split(' ')[0]}</span>
+                <span className="nav-user-name">{user?.name}</span>
                 <ChevronDown size={14} className={`menu-chevron ${showUserMenu ? 'rotate' : ''}`} />
               </button>
 

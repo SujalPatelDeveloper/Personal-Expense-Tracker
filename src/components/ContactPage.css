@@ -207,6 +207,17 @@
   font-family: inherit;
 }
 
+.error-message {
+  padding: 12px 16px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  margin-bottom: 8px;
+}
+
 .contact-form .btn-full {
   width: 100%;
   padding: 15px;
@@ -215,6 +226,22 @@
   letter-spacing: 0.01em;
   border-radius: var(--radius-lg);
   gap: 10px;
+}
+
+.contact-form .btn-full:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+  filter: grayscale(0.5);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ===== SUCCESS STATE ===== */
